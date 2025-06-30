@@ -42,6 +42,7 @@ func main() {
 		r = backend.NewLocalRemote(remotePath)
 	default:
 		fmt.Fprintf(os.Stderr, "Unsupported remote type: %s\n", remoteType)
+		os.Exit(1)
 	}
 
 	if err := mountlib.Mount(*mount, r, *verbose); err != nil {
