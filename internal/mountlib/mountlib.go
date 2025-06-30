@@ -33,9 +33,5 @@ func Mount(mountPath string, remote fs.Remote, verbose bool) error {
 		return fmt.Errorf("failed to serve filesystem: %v", err)
 	}
 
-	// <-c.Ready
-	// if err := c.MountError; err != nil {
-	// 	return fmt.Errorf("mount error: %v", err)
-	// }
-	// return nil
+	return nil
 }
