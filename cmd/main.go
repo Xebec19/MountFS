@@ -37,15 +37,17 @@ func main() {
 	remoteType, remotePath := parts[0], parts[1]
 
 	var r fs.Remote
+	var f *fs.FS
 	switch remoteType {
 	case "local":
 		r = backend.NewLocalRemote(remotePath)
+		f = &fs.FS{Remote: r}
 	default:
 		fmt.Fprintf(os.Stderr, "Unsupported remote type: %s\n", remoteType)
 		os.Exit(1)
 	}
 
-	if err := mountlib.Mount(*mount, r, *verbose); err != nil {
+	if err := mountlib.Mount(*mount, f, *verbose); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to mount: %v\n", err)
 		os.Exit(1)
 	}

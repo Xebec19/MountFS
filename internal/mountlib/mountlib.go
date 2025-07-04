@@ -5,11 +5,10 @@ import (
 	"os"
 
 	"bazil.org/fuse"
-	ffs "bazil.org/fuse/fs"
-	"github.com/Xebec19/reimagined-lamp/internal/fs"
+	"bazil.org/fuse/fs"
 )
 
-func Mount(mountPath string, remote fs.Remote, verbose bool) error {
+func Mount(mountPath string, remote fs.FS, verbose bool) error {
 
 	if err := os.MkdirAll(mountPath, 0755); err != nil {
 		return fmt.Errorf("failed to create mount point: %v", err)
@@ -27,9 +26,7 @@ func Mount(mountPath string, remote fs.Remote, verbose bool) error {
 		fmt.Println("Press Ctrl+C to unmount")
 	}
 
-	filesys := &fs.FS{Remote: remote}
-
-	if err := ffs.Serve(c, filesys); err != nil {
+	if err := fs.Serve(c, remote); err != nil {
 		return fmt.Errorf("failed to serve filesystem: %v", err)
 	}
 

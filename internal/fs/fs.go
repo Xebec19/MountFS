@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	"bazil.org/fuse"
@@ -59,7 +60,7 @@ func (d *Dir) Lookup(ctx context.Context, name string) (fs.Node, error) {
 
 	info, err := d.fs.Remote.Stat(ctx, path)
 	if err != nil {
-		return nil, fuse.ENOENT
+		return nil, fuse.Errno(syscall.ENOENT)
 	}
 
 	if info.IsDir {
@@ -72,8 +73,6 @@ func (d *Dir) Lookup(ctx context.Context, name string) (fs.Node, error) {
 		size: info.Size,
 	}, nil
 }
-
-// TODO ask what is the importance of Attr
 
 func (d *Dir) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
 	files, err := d.fs.Remote.List(ctx, d.path)
