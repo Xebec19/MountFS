@@ -1,54 +1,24 @@
 package main
 
 import (
-	"flag"
-	"fmt"
-	"os"
-	"strings"
+	"log"
+	"net/http"
 
-	"github.com/Xebec19/reimagined-lamp/internal/backend"
-	"github.com/Xebec19/reimagined-lamp/internal/fs"
-	"github.com/Xebec19/reimagined-lamp/internal/mountlib"
+	"github.com/gorilla/mux"
 )
 
+func SaveToken(w http.ResponseWriter, r *http.Request) {
+
+	params := r.URL.Query()
+	code := params.Get("code")
+
+	w.Write([]byte(code))
+}
+
 func main() {
+	r := mux.NewRouter()
 
-	var (
-		remote  = flag.String("remote", "", "Remote name to mount")
-		mount   = flag.String("mount", "", "Mount point")
-		verbose = flag.Bool("verbose", false, "Enable verbose output")
-	)
+	r.HandleFunc("/", SaveToken)
 
-	flag.Parse()
-
-	if *remote == "" || *mount == "" {
-		fmt.Fprintf(os.Stderr, "Usage: %s -remote <remote> -mount <mount>\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "Example: %s -remote local:/home/user/data -mount /mnt/mydata\n", os.Args[0])
-		os.Exit(1)
-	}
-
-	parts := strings.SplitN(*remote, ":", 2)
-
-	if len(parts) != 2 {
-		fmt.Fprintf(os.Stderr, "Invalid remote format. Use <type>:<path>\n")
-		os.Exit(1)
-	}
-
-	remoteType, remotePath := parts[0], parts[1]
-
-	var r fs.Remote
-	var f *fs.FS
-	switch remoteType {
-	case "local":
-		r = backend.NewLocalRemote(remotePath)
-		f = &fs.FS{Remote: r}
-	default:
-		fmt.Fprintf(os.Stderr, "Unsupported remote type: %s\n", remoteType)
-		os.Exit(1)
-	}
-
-	if err := mountlib.Mount(*mount, f, *verbose); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to mount: %v\n", err)
-		os.Exit(1)
-	}
+	log.Fatal(http.ListenAndServe(":8080", r))
 }
