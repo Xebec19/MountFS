@@ -11,3 +11,7 @@ func init() {
 func Info(args ...any) {
 	Logger.Info("log", args...)
 }
+
+func Error(args ...any) {
+	Logger.Info("error", args...)
+}

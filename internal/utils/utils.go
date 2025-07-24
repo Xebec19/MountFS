@@ -12,14 +12,21 @@ var once sync.Once
 var appDir string
 
 func GetAppDir() string {
-
 	once.Do(func() {
-		rootDir, _ := os.UserConfigDir()
+		rootDir, err := os.UserConfigDir()
+		if err != nil {
+			logger.Error("Failed to get user config directory: ", err)
+			return
+		}
+
 		appDir = filepath.Join(rootDir, "mountfs")
-		os.MkdirAll(appDir, 0700)
+		if err := os.MkdirAll(appDir, 0700); err != nil {
+			logger.Error("Failed to create app directory: ", err)
+			return
+		}
+
 		logger.Info("Root dir set ", appDir)
 	})
-
 	return appDir
 }
 
@@ -30,7 +37,9 @@ func GetConfigPath() string {
 }
 
 func GetTokenPath() string {
-	GetAppDir()
+	if dir := GetAppDir(); dir == "" {
+		return ""
+	}
 
 	return filepath.Join(appDir, "token.json")
 }

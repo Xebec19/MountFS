@@ -21,6 +21,7 @@ func SaveToken(w http.ResponseWriter, r *http.Request) {
 
 	slog.Info("code written in ", tokenFilePath)
 
+	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(code))
 }
 
@@ -29,5 +30,5 @@ func main() {
 
 	r.HandleFunc("/", SaveToken)
 
-	log.Fatal(http.ListenAndServe(":8080", r))
+	log.Fatal(http.ListenAndServe("127.0.0.1"+":8080", r))
 }
