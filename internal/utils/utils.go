@@ -3,6 +3,7 @@ package utils
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync"
 
 	"github.com/Xebec19/reimagined-lamp/pkg/logger"
@@ -42,4 +43,8 @@ func GetTokenPath() string {
 	}
 
 	return filepath.Join(appDir, "token.json")
+}
+
+func ConvertFromStrToUint(st string) (int, error) {
+	return strconv.Atoi(st)
 }

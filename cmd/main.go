@@ -1,34 +1,40 @@
 package main
 
 import (
-	"log"
-	"log/slog"
-	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 
+	"github.com/Xebec19/reimagined-lamp/internal/api/server"
 	"github.com/Xebec19/reimagined-lamp/internal/utils"
-	"github.com/gorilla/mux"
+	"github.com/Xebec19/reimagined-lamp/pkg/logger"
 )
 
-func SaveToken(w http.ResponseWriter, r *http.Request) {
-
-	params := r.URL.Query()
-	code := params.Get("code")
-
-	tokenFilePath := utils.GetTokenPath()
-
-	os.WriteFile(tokenFilePath, []byte(code), 0700)
-
-	slog.Info("code written in ", tokenFilePath)
-
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(code))
-}
-
 func main() {
-	r := mux.NewRouter()
 
-	r.HandleFunc("/", SaveToken)
+	portArg := os.Getenv("PORT")
 
-	log.Fatal(http.ListenAndServe("127.0.0.1"+":8080", r))
+	port, err := utils.ConvertFromStrToUint(portArg)
+	if err != nil {
+		logger.Error("Could not get PORT")
+		os.Exit(1)
+	}
+	srv, err := server.CreateServer(uint(port))
+	if err != nil {
+		logger.Error("Could not create server ", err)
+	}
+
+	go func() {
+		srv.StartServer()
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	<-quit
+
+	err = srv.ShutdownServer()
+	if err != nil {
+		logger.Error("Could not shut down server ", err)
+	}
+
 }
