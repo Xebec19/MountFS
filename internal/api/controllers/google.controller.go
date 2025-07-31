@@ -13,6 +13,20 @@ func SaveToken(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
 	code := params.Get("code")
 
+	// Validate the code parameter
+	if code == "" {
+		logger.Error("Missing or empty code parameter")
+		http.Error(w, "Bad request: missing code parameter", http.StatusBadRequest)
+		return
+	}
+
+	// Basic validation for OAuth authorization code format
+	if len(code) < 10 || len(code) > 512 {
+		logger.Error("Invalid code parameter length", "length", len(code))
+		http.Error(w, "Bad request: invalid code format", http.StatusBadRequest)
+		return
+	}
+
 	tokenFilePath := utils.GetTokenPath()
 
 	if err := os.WriteFile(tokenFilePath, []byte(code), 0600); err != nil {
@@ -21,8 +35,8 @@ func SaveToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.Info("code written in ", tokenFilePath)
+	logger.Info("Token saved successfully", "path", tokenFilePath)
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(code))
+	w.Write([]byte("Token saved successfully"))
 }
