@@ -1,40 +1,52 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
+	"strings"
 
-	"github.com/Xebec19/reimagined-lamp/internal/api/server"
-	"github.com/Xebec19/reimagined-lamp/internal/utils"
-	"github.com/Xebec19/reimagined-lamp/pkg/logger"
+	"github.com/Xebec19/reimagined-lamp/internal/backend"
+	"github.com/Xebec19/reimagined-lamp/internal/fs"
+	"github.com/Xebec19/reimagined-lamp/internal/mountlib"
 )
 
 func main() {
 
-	portArg := os.Getenv("PORT")
+	var (
+		remote  = flag.String("remote", "", "Remote name to mount")
+		mount   = flag.String("mount", "", "Mount point")
+		verbose = flag.Bool("verbose", false, "Enable verbose output")
+	)
 
-	port, err := utils.ConvertFromStrToUint(portArg)
-	if err != nil {
-		logger.Error("Could not get PORT")
+	flag.Parse()
+
+	if *remote == "" || *mount == "" {
+		fmt.Fprintf(os.Stderr, "Usage: %s -remote <remote> -mount <mount>\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Example: %s -remote local:/home/user/data -mount /mnt/mydata\n", os.Args[0])
 		os.Exit(1)
 	}
-	srv, err := server.CreateServer(uint(port))
-	if err != nil {
-		logger.Error("Could not create server ", err)
+
+	parts := strings.SplitN(*remote, ":", 2)
+
+	if len(parts) != 2 {
+		fmt.Fprintf(os.Stderr, "Invalid remote format. Use <type>:<path>\n")
+		os.Exit(1)
 	}
 
-	go func() {
-		srv.StartServer()
-	}()
+	remoteType, remotePath := parts[0], parts[1]
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
-	<-quit
-
-	err = srv.ShutdownServer()
-	if err != nil {
-		logger.Error("Could not shut down server ", err)
+	var r fs.Remote
+	switch remoteType {
+	case "local":
+		r = backend.NewLocalRemote(remotePath)
+	default:
+		fmt.Fprintf(os.Stderr, "Unsupported remote type: %s\n", remoteType)
+		os.Exit(1)
 	}
 
+	if err := mountlib.Mount(*mount, r, *verbose); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to mount: %v\n", err)
+		os.Exit(1)
+	}
 }
